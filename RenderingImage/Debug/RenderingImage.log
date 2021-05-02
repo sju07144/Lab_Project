@@ -1,0 +1,9 @@
+﻿  main.cpp
+D:\graphics\RenderingImage\RenderingImage\main.cpp(222,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(223,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(227,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(228,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(230,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(231,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\graphics\RenderingImage\RenderingImage\main.cpp(238,31): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  RenderingImage.vcxproj -> D:\graphics\RenderingImage\Debug\RenderingImage.exe
