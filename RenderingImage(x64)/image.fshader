@@ -55,18 +55,20 @@ void main()
 	   (tempColor.g == 0) && 
 	   (253 <= tempColor.b && tempColor.b <= 255))
 	{
-		fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+		// fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+		fragColor = diffuseColor;
 	}
 	else
 	{ 
-		normal = normal * 2.0 - 1.0; 
+		normal = normal * 2.0 - 1.0;
+		normal = normalize(normal); 
 		/* vec3 tempnormal = vec3(normal.x, normal.y, -normal.z);
 		normal = vec3(tempnormal.z, tempnormal.y, tempnormal.x);
 		normal = normalize(normal); */
 		// vec3 lightDir = normalize(fs_in.lightDir);
 		vec3 lightDir = normalize(-fs_in.lightDir.xyz);
 
-		float diff = max(dot(normal, lightDir), 0.0);
+		float diff = clamp(dot(normal, lightDir), 0.0, 1.0);
 		// float diff = clamp(dot(normal, lightDir), 0.0, 1.0);
 
 		vec3 viewDir = normalize(fs_in.viewDir);

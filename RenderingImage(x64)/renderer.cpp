@@ -39,9 +39,9 @@ Renderer::Renderer()
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_CULL_FACE);
     // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    lightDir = glm::vec4(1.0f, 1.0f, 3.0f, 1.0f);
+    lightDir = glm::vec4(1.0f, glm::sqrt(3.0f), -glm::sqrt(3.0f), 1.0f);
 }
 Renderer::~Renderer()
 {
@@ -50,9 +50,10 @@ Renderer::~Renderer()
 void Renderer::Render()
 {
     InitializeShader();
-    InputModelName();
+    // InputModelName();
     InitializeTextureMap();
     InitializeMatrix();
+    // CreateDirectories();
     RunLoop();
 }
 void Renderer::InitializeShader()
@@ -69,10 +70,20 @@ void Renderer::InputModelName()
 }
 void Renderer::InitializeTextureMap()
 {
-    for (int i = 0; i < 12; i++)
+    // 원래 코드
+    /* for (int i = 0; i < 12; i++)
     {
         normalMaps.push_back({ "sources/" + modelName + "/normal/n_output_" + std::to_string(i) + ".png" });
         albedoMaps.push_back({ "sources/" + modelName + "/albedo/a_output_" + std::to_string(i) + ".png" });
+    } */
+
+    // 월요일까지 제출할 코드
+    for (int i = 0; i < fileSize; ++i)
+    {
+        normalMaps.push_back({ "resources/normal/" + std::to_string(i + 1) + ".gt(normal).png" });
+        albedoMaps.push_back({ "resources/albedo/" + std::to_string(i + 1) + ".gt(albedo).png" });
+        normalMapsForPrediction.push_back({ "resources/normal(prediction)/" + std::to_string(i + 1) + ".pred(normal).png" });
+        albedoMapsForPrediction.push_back({ "resources/albedo(prediction)/" + std::to_string(i + 1) + ".pred(albedo).png" });
     }
 }
 void Renderer::InitializeMatrix()
@@ -114,7 +125,8 @@ void Renderer::InitializeMatrix()
 }
 void Renderer::RunLoop()
 {
-    GLuint textureCount = 0;
+    bool isPrediction = false;
+    int textureCount = 0;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -133,30 +145,73 @@ void Renderer::RunLoop()
 
         shader.SetVec3("viewPos", glm::vec3(0.0f, 0.0f, glm::sqrt(34.0f)));
         // shader.SetVec3("lightDir", glm::vec3(1.0f, 1.0f, 3.0f));
-        shader.SetVec4("lightDir", lightDir);
+        // shader.SetVec4("lightDir", glm::vec4(1.0f, 1.0f, 3.0f, 1.0f));
+        shader.SetVec4("lightDir", lightDir); 
         shader.SetMat4("viewForLightDir", viewForLightDir);
         // shader.SetVec3("lightDirNormalized", glm::normalize(glm::vec3(1.0f, 1.0f, 3.0f)));
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, normalMaps[textureCount].GetTextureID());
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, albedoMaps[textureCount].GetTextureID());
-        RenderQuad();
-        SaveScreenshot("sources/" + modelName + "/image/i_output_" + std::to_string(textureCount) + ".png");
+        if (isPrediction)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, normalMapsForPrediction[textureCount].GetTextureID());
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, albedoMapsForPrediction[textureCount].GetTextureID());
+            RenderQuad();
+            SaveScreenshot("resources/image(prediction)/" + std::to_string(textureCount + 1) + ".pred(image).png");
+        }
+        else
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, normalMaps[textureCount].GetTextureID());
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, albedoMaps[textureCount].GetTextureID());
+            RenderQuad();
+            SaveScreenshot("resources/image/" + std::to_string(textureCount + 1) + ".gt(image).png");
+        }
+        
+        // SaveScreenshot("sources/" + modelName + "/image/" + std::to_string(lightIndex * 30) + "/i_output_" + std::to_string(textureCount) + ".png"); 
+        // SaveScreenshot("sources/" + modelName + "/image/i_output_" + std::to_string(textureCount) + ".png");
         // SaveScreenshot("D://temp" + std::to_string(textureCount) + ".png");
         // SaveScreenshot("D://temp.png");
-        // SaveScreenshot("directional_light/plate/i_output_" + std::to_string(textureCount) + ".png");
-        // SaveScreenshot("prediction_destination/output(gt_modification)_" + std::to_string(lightPosCount) + ".png");
 
-        textureCount++;
-        if (textureCount % 12 == 0)
+        if (isPrediction)
         {
-            glfwTerminate();
+            isPrediction = false;
+            textureCount++;
+        }   
+        else
+            isPrediction = true;
+
+        if (textureCount == fileSize)
             break;
-        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+    }
+}
+void Renderer::CreateDirectories()
+{
+    std::stringstream directoryStream;
+
+    for (int i = 0; i < 12; ++i)
+    {
+        try
+        {
+            directoryStream << "./sources/" << modelName << "/image/" << i * 30;
+            std::filesystem::create_directory(directoryStream.str()); // throws: directories
+            directoryStream.str("");
+        }
+        catch (std::filesystem::filesystem_error const& ex)
+        {
+            std::cout
+                << "what():  " << ex.what() << '\n'
+                << "path1(): " << ex.path1() << '\n'
+                << "path2(): " << ex.path2() << '\n'
+                << "code().value():    " << ex.code().value() << '\n'
+                << "code().message():  " << ex.code().message() << '\n'
+                << "code().category(): " << ex.code().category().name() << '\n';
+        }
+
     }
 }
 void Renderer::ProcessInput(GLFWwindow* window)
