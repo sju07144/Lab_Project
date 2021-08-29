@@ -37,11 +37,8 @@ Renderer::Renderer()
     }
 
     glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_CULL_FACE);
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    lightDir = glm::vec4(1.0f, glm::sqrt(3.0f), -glm::sqrt(3.0f), 1.0f);
+    lightDir = glm::vec4(-1.0f, glm::sqrt(3.0f), -glm::sqrt(3.0f), 1.0f); // Directional Light의 방향벡터
 }
 Renderer::~Renderer()
 {
@@ -49,41 +46,53 @@ Renderer::~Renderer()
 }
 void Renderer::Render()
 {
-    InitializeShader();
-    // InputModelName();
+    InputModelName();
     InitializeTextureMap();
+    InitializeShader();
     InitializeMatrix();
-    // CreateDirectories();
     RunLoop();
 }
 void Renderer::InitializeShader()
 {
-    shader.SetShader("Image.vshader", "Image.fshader");
+    shader.SetShader("Image.vshader", "Image.fshader"); // shader를 새로 작성할 경우, 파일명 변경
     shader.Use();
-    shader.SetInt("normalMap", 0);
-    shader.SetInt("albedoMap", 1);
+    shader.SetInt("normalMap", 0); // 첫 번째 parameter에 있는 문자열을 uniform 변수로 shader에서 사용
+    shader.SetInt("albedoMap", 1); // 위와 동일
 }
 void Renderer::InputModelName()
 {
-    std::cout << "Input Model Name: ";
+    std::cout << "Input Model Name(resources: if arbitary): ";
     std::cin >> modelName;
+    std::cout << "Input number of files: "; // 영현님이 주신 파일을 돌릴 경우 주로 12개, 홍현님의 경우 폴더에서 파일 개수 확인 후 입력
+    std::cin >> fileSize;
 }
 void Renderer::InitializeTextureMap()
 {
-    // 원래 코드
-    /* for (int i = 0; i < 12; i++)
+    if (modelName == "resources") // resources 폴더에서 불러오기
     {
-        normalMaps.push_back({ "sources/" + modelName + "/normal/n_output_" + std::to_string(i) + ".png" });
-        albedoMaps.push_back({ "sources/" + modelName + "/albedo/a_output_" + std::to_string(i) + ".png" });
-    } */
-
-    // 월요일까지 제출할 코드
-    for (int i = 0; i < fileSize; ++i)
+        for (int i = 0; i < fileSize; ++i)
+        {
+            normalMaps.push_back({ "resources/normal/" + std::to_string(i + 1) + ".gt(normal).png" });
+            albedoMaps.push_back({ "resources/albedo/" + std::to_string(i + 1) + ".gt(albedo).png" });
+            normalMapsForPrediction.push_back({ "resources/normal(prediction)/" + std::to_string(i + 1) + ".pred(normal).png" });
+            albedoMapsForPrediction.push_back({ "resources/albedo(prediction)/" + std::to_string(i + 1) + ".pred(albedo).png" });
+        }
+    }
+    else // modelName과 같은 sources 폴더의 하위 폴더에서 불러오기
     {
-        normalMaps.push_back({ "resources/normal/" + std::to_string(i + 1) + ".gt(normal).png" });
-        albedoMaps.push_back({ "resources/albedo/" + std::to_string(i + 1) + ".gt(albedo).png" });
-        normalMapsForPrediction.push_back({ "resources/normal(prediction)/" + std::to_string(i + 1) + ".pred(normal).png" });
-        albedoMapsForPrediction.push_back({ "resources/albedo(prediction)/" + std::to_string(i + 1) + ".pred(albedo).png" });
+        if (fileSize == 12) // 영현님께서 파일 개수를 변경할 경우 이 숫자를 변경해야함
+        {
+            for (int i = 0; i < fileSize; i++)
+            {
+                normalMaps.push_back({ "sources/" + modelName + "/normal/n_output_" + std::to_string(i) + ".png" });
+                albedoMaps.push_back({ "sources/" + modelName + "/albedo/a_output_" + std::to_string(i) + ".png" });
+            }
+        }
+        else
+        {
+            std::cerr << "Model not Found or file Size error\n";
+            return;
+        }
     }
 }
 void Renderer::InitializeMatrix()
@@ -94,34 +103,13 @@ void Renderer::InitializeMatrix()
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
 
-    // lightDir tranform
-    /* for (int i = 0; i < 4; ++i)
-    {
-        int sum = 0;
-        for (int j = 0; j < 4; ++j)
-        {
-            sum += viewForLightDir[j][i] * lightDir[j];
-        }
-        lightDirReal[i] = sum;
-    } */
-
-
     projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f); // 꼭 world coordinates로 설정해야함!!!
-
-    /* view = glm::lookAt(
-        glm::vec3(3.0f, 4.0f, 3.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    ); */
     view = glm::lookAt(
         glm::vec3(0.0f, 0.0f, glm::sqrt(34.0f)),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
-
     model = glm::mat4(1.0f);
-    /* model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(-43.314f), glm::vec3(1.0f, 0.0f, 0.0f)); */
 }
 void Renderer::RunLoop()
 {
@@ -144,74 +132,55 @@ void Renderer::RunLoop()
         shader.SetMat4("model", model);
 
         shader.SetVec3("viewPos", glm::vec3(0.0f, 0.0f, glm::sqrt(34.0f)));
-        // shader.SetVec3("lightDir", glm::vec3(1.0f, 1.0f, 3.0f));
-        // shader.SetVec4("lightDir", glm::vec4(1.0f, 1.0f, 3.0f, 1.0f));
         shader.SetVec4("lightDir", lightDir); 
         shader.SetMat4("viewForLightDir", viewForLightDir);
-        // shader.SetVec3("lightDirNormalized", glm::normalize(glm::vec3(1.0f, 1.0f, 3.0f)));
 
-        if (isPrediction)
+        if (modelName == "resources") // resources 폴더에 저장
+        {
+            if (isPrediction)
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, normalMapsForPrediction[textureCount].GetTextureID());
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, albedoMapsForPrediction[textureCount].GetTextureID());
+                RenderQuad();
+                SaveScreenshot("resources/image(prediction)/" + std::to_string(textureCount + 1) + ".pred(image).png");
+            }
+            else
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, normalMaps[textureCount].GetTextureID());
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, albedoMaps[textureCount].GetTextureID());
+                RenderQuad();
+                SaveScreenshot("resources/image/" + std::to_string(textureCount + 1) + ".gt(image).png");
+            }
+
+            if (isPrediction)
+            {
+                isPrediction = false;
+                textureCount++;
+            }
+            else
+                isPrediction = true;
+        }
+
+        else // sources 폴더에 저장
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, normalMapsForPrediction[textureCount].GetTextureID());
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, albedoMapsForPrediction[textureCount].GetTextureID());
             RenderQuad();
-            SaveScreenshot("resources/image(prediction)/" + std::to_string(textureCount + 1) + ".pred(image).png");
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, normalMaps[textureCount].GetTextureID());
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, albedoMaps[textureCount].GetTextureID());
-            RenderQuad();
-            SaveScreenshot("resources/image/" + std::to_string(textureCount + 1) + ".gt(image).png");
-        }
-        
-        // SaveScreenshot("sources/" + modelName + "/image/" + std::to_string(lightIndex * 30) + "/i_output_" + std::to_string(textureCount) + ".png"); 
-        // SaveScreenshot("sources/" + modelName + "/image/i_output_" + std::to_string(textureCount) + ".png");
-        // SaveScreenshot("D://temp" + std::to_string(textureCount) + ".png");
-        // SaveScreenshot("D://temp.png");
-
-        if (isPrediction)
-        {
-            isPrediction = false;
+            SaveScreenshot("sources/" + modelName + "/image/i_output_" + std::to_string(textureCount) + ".png");
             textureCount++;
-        }   
-        else
-            isPrediction = true;
+        }
 
         if (textureCount == fileSize)
             break;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
-}
-void Renderer::CreateDirectories()
-{
-    std::stringstream directoryStream;
-
-    for (int i = 0; i < 12; ++i)
-    {
-        try
-        {
-            directoryStream << "./sources/" << modelName << "/image/" << i * 30;
-            std::filesystem::create_directory(directoryStream.str()); // throws: directories
-            directoryStream.str("");
-        }
-        catch (std::filesystem::filesystem_error const& ex)
-        {
-            std::cout
-                << "what():  " << ex.what() << '\n'
-                << "path1(): " << ex.path1() << '\n'
-                << "path2(): " << ex.path2() << '\n'
-                << "code().value():    " << ex.code().value() << '\n'
-                << "code().message():  " << ex.code().message() << '\n'
-                << "code().category(): " << ex.code().category().name() << '\n';
-        }
-
     }
 }
 void Renderer::ProcessInput(GLFWwindow* window)

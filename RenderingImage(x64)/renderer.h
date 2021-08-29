@@ -8,10 +8,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
-#include <renderfunction.h>
-#include <shader.h>
-#include <texture.h>
-#include <textureWithClass.h>
+#include "renderfunction.h"
+#include "shader.h"
+#include "textureWithClass.h"
 
 class Renderer
 {
@@ -24,7 +23,7 @@ private:
 	const GLuint width = 256;
 	const GLuint height = 256;
 
-	const int fileSize = 63;
+	int fileSize;
 
 	Shader shader;
 
@@ -37,7 +36,6 @@ private:
 	glm::mat4 viewForLightDir;
 
 	glm::vec4 lightDir;
-	glm::vec4 lightDirReal;
 
 	std::vector<Texture> normalMaps;
 	std::vector<Texture> albedoMaps;
@@ -52,7 +50,6 @@ private:
 	void InitializeMatrix();
 	void RunLoop();
 
-	void CreateDirectories();
 	static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void ProcessInput(GLFWwindow* Window);
 };

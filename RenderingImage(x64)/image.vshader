@@ -4,12 +4,10 @@ layout(location = 1) in vec2 aTexCoords;
 
 out VS_OUT
 {
-	// vec3 fragColor;
 	vec3 fragPos;
 	vec3 fragPosViewCoordinates;
 	vec2 texCoords;
 	vec3 viewDir;
-	// vec3 lightDir; 
 	vec4 lightDir;
 } vs_out;
 
@@ -24,18 +22,14 @@ uniform mat4 viewForLightDir;
 void main()
 {
 	mat4 viewModelMatrix = view * model;
-	vs_out.fragPos = vec3(model * vec4(aPos, 1.0));
-	vs_out.fragPosViewCoordinates = vec3(viewModelMatrix * vec4(aPos, 1.0));
+	vs_out.fragPos = vec3(model * vec4(aPos, 1.0)); // World Coordinates ÁÂÇ¥
+	vs_out.fragPosViewCoordinates = vec3(viewModelMatrix * vec4(aPos, 1.0)); // View Coordinates ÁÂÇ¥
 	vs_out.texCoords = aTexCoords;
 
 	vec3 viewPosViewCoordinates = vec3(view * vec4(viewPos, 1.0));
 	vs_out.viewDir = viewPosViewCoordinates - vs_out.fragPosViewCoordinates;
 
-	/* vec3 lightPosViewCoordinates = vec3(view * vec4(lightPos, 1.0));
-	vs_out.lightDir = lightPosViewCoordinates - vs_out.fragPosViewCoordinates; */
-	// vs_out.lightDir = view * vec4(lightDir, 1.0);
-	// vs_out.lightDir = lightDir;
-	vs_out.lightDir = viewForLightDir * lightDir;
+	vs_out.lightDir = viewForLightDir * lightDir; // light direction¸¸ view matrix¸¦ ´Ù¸£°Ô °öÇÔ
 
 	gl_Position = projection * viewModelMatrix * vec4(aPos, 1.0);
 }
